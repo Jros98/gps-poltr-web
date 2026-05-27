@@ -271,6 +271,23 @@ let marker;
 
 let gpsSeleccionado = null;
 
+/* LIBERAR GPS AL SALIR */
+
+window.addEventListener("beforeunload", async () => {
+
+if(gpsSeleccionado){
+
+await setDoc(
+doc(db,"gpsStatus",gpsSeleccionado),
+{
+activo:false
+}
+);
+
+}
+
+});
+
 /* VEHICULOS */
 
 const gpsIDs = [
