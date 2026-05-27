@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Dashboard POLTR WEB</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 10px;
+  gap: 15px;
+  box-sizing: border-box;
+}
+
+.panel {
+  width: 100%;
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 20px;
+  box-sizing: border-box;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.topbar h2 {
+  margin: 0;
+  color: #1e3a8a;
+  font-size: 22px;
+}
+
+.online {
+  background: #c7f0d8;
+  color: #0f5132;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.card {
+  background: white;
+  border: 2px solid #dbeafe;
+  border-radius: 15px;
+  padding: 15px;
+}
+
+.card span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.card h3 {
+  margin-top: 10px;
+  color: #1e3a8a;
+}
+
+.alerta {
+  margin-top: 15px;
+  padding: 14px;
+  border-radius: 15px;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  background: gray;
+}
+
+#map {
+  width: 100%;
+  height: 60vh;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="panel">
+
+<div class="topbar">
+
+<h2>Dashboard POLTR WEB</h2>
+
+<div class="online">
+🟢 GPS conectado
+</div>
+
+</div>
+
+<div class="cards">
+
+<div class="card">
+<span>Estado</span>
+<h3 id="estado">Conectando...</h3>
+</div>
+
+<div class="card">
+<span>Velocidad</span>
+<h3 id="velocidad">0 km/h</h3>
+</div>
+
+<div class="card">
+<span>Latitud</span>
+<h3 id="latitud">0</h3>
+</div>
+
+<div class="card">
+<span>Longitud</span>
+<h3 id="longitud">0</h3>
+</div>
+
+</div>
+
+<div class="alerta">
+Esperando datos GPS...
+</div>
+
+</div>
+
+<div id="map"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+
+import {
+  getFirestore,
+  doc,
+  onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+/* FIREBASE */
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyBQ8LFeSTZp7VUORIlOihsI74bE4wtOoKk",
+
+  authDomain: "sistema-poltr-web.firebaseapp.com",
+
+  projectId: "sistema-poltr-web",
+
+  storageBucket: "sistema-poltr-web.firebasestorage.app",
+
+  messagingSenderId: "348807584589",
+
+  appId: "1:348807584589:web:0016f2ecd2072d90473504"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+/* MAPA */
+
+const map = L.map('map').setView([5.05, -75.52], 13);
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+ attribution:'&copy; OpenStreetMap'
+}).addTo(map);
+
+let marker;
+
+/* LEER FIREBASE */
+
+onSnapshot(doc(db,"gps","gps1"),(docSnap)=>{
+
+if(docSnap.exists()){
+
+const data = docSnap.data();
+
+const lat = data.latitud;
+
+const lng = data.longitud;
+
+const kmh = data.velocidad;
+
+/* MARCADOR */
+
+if(!marker){
+
+marker = L.marker([lat,lng]).addTo(map);
+
+map.setView([lat,lng],16);
+
+}else{
+
+marker.setLatLng([lat,lng]);
+
+}
+
+/* DATOS */
+
+document.getElementById("latitud").innerHTML =
+lat.toFixed(6);
+
+document.getElementById("longitud").innerHTML =
+lng.toFixed(6);
+
+document.getElementById("velocidad").innerHTML =
+kmh.toFixed(1) + " km/h";
+
+/* ALERTAS */
+
+if(kmh < 1){
+
+document.querySelector(".alerta").innerHTML =
+"⚠ Vehículo detenido";
+
+document.querySelector(".alerta").style.background =
+"orange";
+
+document.getElementById("estado").innerHTML =
+"DETENIDO";
+
+}else if(kmh > 20){
+
+document.querySelector(".alerta").innerHTML =
+"⚠ Velocidad alta";
+
+document.querySelector(".alerta").style.background =
+"red";
+
+document.getElementById("estado").innerHTML =
+"ALERTA";
+
+}else{
+
+document.querySelector(".alerta").innerHTML =
+"✅ Vehículo en movimiento";
+
+document.querySelector(".alerta").style.background =
+"green";
+
+document.getElementById("estado").innerHTML =
+"EN RUTA";
+
+}
+
+}
+
+});
+
+</script>
+
+</body>
+
+</html>
